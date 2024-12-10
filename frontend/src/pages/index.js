@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { getDate } from "./function.js"
 
 const API_URL = "http://localhost:4000/Tasks/"
 
@@ -28,6 +27,49 @@ export default function Home() {
       [name]: value,
     }));
   };
+
+  const handleChangeTask = (e, id) => {
+    const { name, value } = e.target;
+    const updateList = [...taskList];
+
+    for (let i = 0; i < updateList.length; i += 1) {
+      if (updateList[i].id === id) {
+        updateList[i] = {
+          ...updateList[i],
+          [name]: value,
+        }
+        break;
+      }
+    }
+    setList(updateList)
+  }
+
+  const SaveEditTask = (id) => {
+    const taskToUpdate = taskList.find((task) => task.id === id);
+
+    fetch(API_URL+id, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: taskToUpdate.title,
+        description: taskToUpdate.description,
+        status: taskToUpdate.status,
+      }),
+    })
+      .then((response) => response.json())
+      .then((updatedTask) => {
+        setList((prev) =>
+          prev.map((task) =>
+            task.id === id ? { ...task, ...updatedTask } : task
+          )
+        );
+      })
+      .catch((error) => console.error("Erreur lors de la mise à jour de la tâche :", error));
+  };
+
+
 
   const addTask = () => {
     const newTask = {
@@ -96,15 +138,32 @@ export default function Home() {
       {taskList.length > 0 ? (
         <ul className="space-y-4">
           {taskList.map((task) => (
-          <li
-            key={task.id}
-            className="flex justify-between items-center p-4 bg-gray-100 rounded-md shadow-sm"
-          >
+            <li
+              key={task.id}
+              className="flex justify-between items-center p-4 bg-gray-100 rounded-md shadow-sm"
+            >
             <div>
-              <h3 className="font-bold text-lg text-black">{task.title}</h3>
-              <p className="text-black">{task.description}</p>
-              <span className="text-sm text-black">Statut : {task.status}</span>
+              <input
+                type="text"
+                name="title"
+                value={task.title}
+                onChange={(e) => handleChangeTask(e, task.id)}
+                className="w-4/4 p-3 border border-black font-bold text-lg text-black"
+              />
+              <textarea
+                name="description"
+                value={task.description}
+                onChange={(e) => handleChangeTask(e, task.id)}
+                className="border-black text-black"
+              />
             </div>
+            
+            <button
+              onClick={() => SaveEditTask(task.id)}
+              className="px-3 py-1 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition"
+            >
+              Sauvegarder
+            </button>
             <button
               onClick={() => deleteTask(task.id)}
               className="px-3 py-1 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition"
