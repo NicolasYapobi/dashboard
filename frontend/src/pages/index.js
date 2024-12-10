@@ -6,12 +6,10 @@ const API_URL = "http://localhost:4000/Tasks/"
 export default function Home() {
 
   const [taskList, setList] = useState([]);
-  const [count, setCounter] = useState(0);
-
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    state: ""
+    status: "A faire"
   });
 
   useEffect(() => {
@@ -35,8 +33,21 @@ export default function Home() {
     const newTask = {
       ...formData 
     };
-    setFormData({title: "", description: "", state: "à faire"})
-    setCounter(count + 1)
+    setFormData({title: "", description: "", state: ""})
+    fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(newTask)
+    })
+    .then((response) => 
+      response.json()
+  )
+    .then((data) => {
+      setList((prev) => [...prev, data]);
+    })
+    .catch((error) => console.error("Error: ", error))
   };
 
 
