@@ -50,6 +50,19 @@ export default function Home() {
     .catch((error) => console.error("Error: ", error))
   };
 
+  const deleteTask = (id) => {
+    console.log(API_URL+id)
+    fetch(API_URL+id, {
+      method: "DELETE"
+    })
+    .then(() => {
+      setList((prev) =>
+        prev.filter((task) => task.id !== id) 
+      )
+    })
+    .catch((error) => console.error("Error: ", error))
+  };
+
 
 
   return (
@@ -93,6 +106,7 @@ export default function Home() {
               <span className="text-sm text-black">Statut : {task.status}</span>
             </div>
             <button
+              onClick={() => deleteTask(task.id)}
               className="px-3 py-1 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition"
             >
               Supprimer
