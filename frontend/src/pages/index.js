@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getDate } from "./function.js"
+
+const API_URL = "http://localhost:4000/Tasks/"
 
 export default function Home() {
 
@@ -12,6 +14,15 @@ export default function Home() {
     state: ""
   });
 
+  useEffect(() => {
+      fetch(API_URL)
+      .then(response => response.json())
+      .then((data) => { 
+        console.log(data);
+        setList(data);
+      })
+  }, []);
+
   const handleChange = (e) => {
     const {name, value} = e.target;
     setFormData((prev) => ({
@@ -22,10 +33,8 @@ export default function Home() {
 
   const addTask = () => {
     const newTask = {
-      id: count, 
       ...formData 
     };
-    setList((prev) => [...prev, newTask]);
     setFormData({title: "", description: "", state: "à faire"})
     setCounter(count + 1)
   };
@@ -70,7 +79,7 @@ export default function Home() {
             <div>
               <h3 className="font-bold text-lg text-black">{task.title}</h3>
               <p className="text-black">{task.description}</p>
-              <span className="text-sm text-black">Statut : {task.state}</span>
+              <span className="text-sm text-black">Statut : {task.status}</span>
             </div>
             <button
               className="px-3 py-1 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition"
