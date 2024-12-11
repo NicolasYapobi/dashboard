@@ -5,6 +5,7 @@ import TaskItem from "../components/taskItem";
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const listStatus = ["A faire", "En cours", "Terminée"];
 
 export default function Home() {
   const [taskList, setList] = useState([]);
@@ -15,12 +16,25 @@ export default function Home() {
   });
 
   useEffect(() => {
-    fetch(API_URL+"tasks")
-      .then((response) => response.json())
-      .then((data) => setList(data))
-      .catch((error) => console.error("Erreur :", error + response.json));
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch(API_URL+"tasks");
+  
+        if (!response.ok) {
+          throw new Error(`Erreur réseau : ${response.status} ${response.statusText}`);
+        }
+  
+        const data = await response.json();
+        setList(data);
+      } catch (error) {
+        console.error("Erreur:", error);
+        alert("Une erreur est survenue côté serveur.")
+      }
+    };
+  
+    fetchTasks();
   }, []);
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -37,16 +51,29 @@ export default function Home() {
     setList(updatedList);
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     const newTask = { ...formData };
-    fetch(API_URL+"tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTask),
-    })
-      .then((response) => response.json())
-      .then((data) => setList((prev) => [...prev, data]))
-      .catch((error) => console.error("Erreur :", error));
+    
+    if (newTask.title.length === 0) {
+      alert("Veuillez rajouter un titre pour votre tâche");
+      return
+    }
+    try {
+      const response = await fetch(API_URL+"tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTask),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erreur du serveur : ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
+      setList((prev) => [...prev, data])
+    } catch (error) {
+      console.log("Erreur: ", + error)
+      alert("Une erreur est survenue côté serveur.")
+    }
   };
 
   const deleteTask = (id) => {
@@ -62,14 +89,39 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(taskToUpdate),
     })
-      .then((response) => response.json())
-      .then((updatedTask) =>
-        setList((prev) =>
-          prev.map((task) => (task.id === id ? { ...task, ...updatedTask } : task))
-        )
+    .then((response) => response.json())
+    .then((updatedTask) =>
+      setList((prev) =>
+        prev.map((task) => (task.id === id ? { ...task, ...updatedTask } : task))
       )
-      .catch((error) => console.error("Erreur :", error));
+    )
+    .catch((error) => {
+      console.error("Erreur :", error)
+      alert("Une erreur est survenue côté serveur.")
+    });
   };
+
+  const editStatus = (task) => {
+    let indexStatus = listStatus.indexOf(task.status);
+    let updateStatus = listStatus[(indexStatus + 1) % listStatus.length]
+
+    fetch(API_URL+"tasks/"+task.id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({status: updateStatus})
+    })
+    .then((response) => response.json())
+    .then((updatedTask) => {
+      console.log(updatedTask)
+      setList((prev) =>
+        prev.map((task) => ({ ...task, ...updatedTask }))
+      )}
+    )
+    .catch((error) => {
+      console.error("Erreur :", error)
+      alert("Une erreur est survenue côté serveur.")
+    });
+  }
 
   return (
     <div className="max-w-2xl mx-auto mt-12 text-center">
@@ -83,6 +135,7 @@ export default function Home() {
             handleChangeTask={handleChangeTask}
             SaveEditTask={SaveEditTask}
             deleteTask={deleteTask}
+            editStatus={editStatus}
           />
         ))}
       </ul>
